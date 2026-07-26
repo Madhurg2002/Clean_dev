@@ -19,6 +19,7 @@ jobs:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -55,6 +56,7 @@ jobs:
 
       - name: Install UPX
         uses: crazy-max/ghaction-upx@v4
+        if: matrix.os != 'macos-latest'
         with:
           install-only: true
 
