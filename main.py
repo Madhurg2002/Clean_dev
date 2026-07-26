@@ -43,7 +43,7 @@ def main():
             return
 
         if wizard == "Clear entire cache":
-            from constants import CACHE_FILE
+            from src.constants import CACHE_FILE
             if CACHE_FILE.exists():
                 try:
                     os.remove(CACHE_FILE)
@@ -100,11 +100,11 @@ def main():
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
 Examples:
-  python clean_dev.py                     # Interactive Wizard (when run without arguments)
-  python clean_dev.py C:\\Projects         # Scan custom directory directly
-  python clean_dev.py -g                  # Group/sort targets by path directly
-  python clean_dev.py -d                  # Dry-run mode directly
-  python clean_dev.py -e build -e dist    # Exclude custom directories directly
+  python main.py                     # Interactive Wizard (when run without arguments)
+  python main.py C:\\Projects         # Scan custom directory directly
+  python main.py -g                  # Group/sort targets by path directly
+  python main.py -d                  # Dry-run mode directly
+  python main.py -e build -e dist    # Exclude custom directories directly
 """
         )
         parser.add_argument("target_dir", nargs="?", default=".", help="The directory to scan for cleanup targets")
@@ -116,7 +116,7 @@ Examples:
         args = parser.parse_args()
 
         if args.clear_cache:
-            from constants import CACHE_FILE
+            from src.constants import CACHE_FILE
             if CACHE_FILE.exists():
                 try:
                     os.remove(CACHE_FILE)

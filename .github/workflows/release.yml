@@ -62,7 +62,7 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller --onefile --console --name "DevCleaner" --noconfirm --exclude-module tkinter --exclude-module sqlite3 --exclude-module unittest clean_dev.py
+          pyinstaller --onefile --console --name "DevCleaner" --noconfirm --exclude-module tkinter --exclude-module sqlite3 --exclude-module unittest main.py
 
       - name: Rename and Prepare Asset
         shell: bash

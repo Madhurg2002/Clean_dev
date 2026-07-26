@@ -27,10 +27,10 @@ It targets:
 ## Code Architecture
 
 The codebase is partitioned into modular, single-responsibility files for easier readability:
-*   [constants.py](file:///c:/Code/Study/Clean_dev/constants.py): Holds scan categories, SKIP list, cache files, and ANSI colors.
-*   [fs_utils.py](file:///c:/Code/Study/Clean_dev/fs_utils.py): Holds size math, path conversion utilities, and Windows terminal color initialization.
-*   [scanner.py](file:///c:/Code/Study/Clean_dev/scanner.py): Contains parallel scanning executors and JSON caching algorithms.
-*   [clean_dev.py](file:///c:/Code/Study/Clean_dev/clean_dev.py): Orchestrates arguments, launches the custom scan wizard, and executes deletion flows.
+*   [main.py](file:///c:/Code/Study/Clean_dev/main.py): Orchestrates arguments, launches the custom scan wizard, and executes deletion flows (entry point).
+*   [src/constants.py](file:///c:/Code/Study/Clean_dev/src/constants.py): Holds scan categories, SKIP list, cache files, and ANSI colors.
+*   [src/fs_utils.py](file:///c:/Code/Study/Clean_dev/src/fs_utils.py): Holds size math, path conversion utilities, and Windows terminal color initialization.
+*   [src/scanner.py](file:///c:/Code/Study/Clean_dev/src/scanner.py): Contains parallel scanning executors and JSON caching algorithms.
 
 ---
 
@@ -54,7 +54,7 @@ The codebase is partitioned into modular, single-responsibility files for easier
 ### 1. Interactive Wizard Mode
 To scan interactively (pick scan folder with autocomplete, choose sorting, toggles exclusions and dry-run), simply run without arguments:
 ```bash
-python clean_dev.py
+python main.py
 ```
 
 ### 2. Direct CLI Automation Mode
@@ -62,19 +62,19 @@ Run the Python script by pointing it to any target directory and passing optiona
 
 ```bash
 # Scan a specific directory and group targets by folder path
-python clean_dev.py C:\Users\YourUser\Projects -g
+python main.py C:\Users\YourUser\Projects -g
 
 # Simulate a deletion without modifying files (Dry-Run)
-python clean_dev.py -d
+python main.py -d
 
 # Exclude custom directories from scanning (case-insensitive folder names)
-python clean_dev.py -e build -e test_cache
+python main.py -e build -e test_cache
 
 # Clear the DevCleaner cache entirely and exit
-python clean_dev.py --clear-cache
+python main.py --clear-cache
 
 # View CLI help instructions
-python clean_dev.py --help
+python main.py --help
 ```
 
 ### CLI Options Table:
@@ -94,7 +94,7 @@ python clean_dev.py --help
 You can compile a standalone executable of DevCleaner (no Python installation required to run) using PyInstaller:
 
 ```bash
-pyinstaller --onefile --console --name "DevCleaner" --noconfirm clean_dev.py
+pyinstaller --onefile --console --name "DevCleaner" --noconfirm main.py
 ```
 
 The output standalone executable will be generated at:
