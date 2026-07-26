@@ -115,7 +115,8 @@ This repository includes a GitHub Actions workflow that automates the building a
 ### How it works:
 1. When a new tag matching `v*` (e.g. `v1.0.0`) is pushed to GitHub, the workflow triggers automatically.
 2. The workflow compiles the executable on a matrix of runner environments:
-   * **Windows** (creating `DevCleaner-windows-amd64.exe`)
+   * **Windows 64-bit** (creating `DevCleaner-windows-amd64.exe`)
+   * **Windows 32-bit** (creating `DevCleaner-windows-386.exe` for older or emulation architectures)
    * **macOS** (creating `DevCleaner-macos-arm64`)
    * **Linux** (creating `DevCleaner-linux-amd64`)
 3. The build binaries are automatically uploaded to the matching GitHub Release page for that tag.
