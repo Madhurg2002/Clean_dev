@@ -98,10 +98,10 @@ def main():
         parser = argparse.ArgumentParser(
             description="DevCleaner - Scan and clean development environments",
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            epilog="""
+            epilog=r"""
 Examples:
   python main.py                     # Interactive Wizard (when run without arguments)
-  python main.py C:\\Projects         # Scan custom directory directly
+  python main.py C:\Projects         # Scan custom directory directly
   python main.py -g                  # Group/sort targets by path directly
   python main.py -d                  # Dry-run mode directly
   python main.py -e build -e dist    # Exclude custom directories directly
