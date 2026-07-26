@@ -6,7 +6,7 @@ from pathlib import Path
 from src.constants import (ECOSYSTEM_TARGET_CATEGORIES, VENV_NAMES, CACHE_FILE,
                            COLOR_GREEN, COLOR_RED, COLOR_YELLOW, COLOR_BLUE,
                            COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
-from src.fs_utils import support_long_path, get_dir_size, format_size, is_python_env
+from src.fs_utils import support_long_path, get_dir_size, format_size, is_python_env, is_conda_env
 
 def load_cache(root_path: Path):
     if not CACHE_FILE.exists():
@@ -92,7 +92,7 @@ def process_dir(current_path: Path, skip_dirs: set):
                     name_lower = d.lower()
                     
                     is_eco_cache = name_lower in ECOSYSTEM_TARGET_CATEGORIES
-                    is_venv = name_lower in VENV_NAMES and is_python_env(folder_path)
+                    is_venv = name_lower in VENV_NAMES and (is_python_env(folder_path) or is_conda_env(folder_path))
                     
                     # Parent-dependent targets
                     is_rust = (name_lower == "target" and (current_path / "Cargo.toml").exists())
@@ -103,7 +103,7 @@ def process_dir(current_path: Path, skip_dirs: set):
                         if is_eco_cache:
                             folder_type = ECOSYSTEM_TARGET_CATEGORIES.get(name_lower)
                         elif is_venv:
-                            folder_type = "Python VENV"
+                            folder_type = "Conda ENV" if is_conda_env(folder_path) else "Python VENV"
                         elif is_rust:
                             folder_type = "Rust Target"
                         elif is_maven:

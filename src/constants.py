@@ -7,6 +7,8 @@ VENV_NAMES = {
     "env",
     "virtualenv",
     ".virtualenv",
+    ".conda",
+    "conda-env",
 }
 
 # General ecosystem caches and directories

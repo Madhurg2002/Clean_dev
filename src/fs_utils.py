@@ -45,6 +45,12 @@ def is_python_env(path: Path) -> bool:
     except (PermissionError, OSError):
         return False
 
+def is_conda_env(path: Path) -> bool:
+    try:
+        return (path / "conda-meta").exists()
+    except (PermissionError, OSError):
+        return False
+
 def remove_readonly_handler(func, path, exc_info):
     try:
         os.chmod(path, stat.S_IWRITE)

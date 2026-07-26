@@ -4,7 +4,7 @@ DevCleaner is a high-performance, colorized command-line utility written in Pyth
 
 It targets:
 * **Node.js / JavaScript**: `node_modules`, `.yarn`, `bower_components`, `.turbo`, `.next`, `.nuxt`, `.expo`, `.parcel-cache`, `.angular`, `.sass-cache`
-* **Python**: Virtual environments (`venv`, `.venv`, `env`, etc., detecting `pyvenv.cfg` or binaries), `.pytest_cache`, `.mypy_cache`, `.tox`, `__pycache__`
+* **Python / Conda**: Virtual environments (`venv`, `.venv`, `env`, etc., detecting `pyvenv.cfg` or binaries), `.pytest_cache`, `.mypy_cache`, `.tox`, `__pycache__` bytecode, and local Conda/Miniconda environments (detecting `conda-meta` inside `.conda` or `conda-env` directories)
 * **Rust**: `target` build directories (safe checking for `Cargo.toml` in parent folder)
 * **Java**: `.gradle` caches, and `target` build directories (safe checking for Maven `pom.xml` in parent folder)
 * **C / C++**: `build` build directories (safe checking for CMake `CMakeLists.txt` in parent folder)
