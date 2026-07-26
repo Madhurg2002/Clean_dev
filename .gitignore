@@ -1,3 +1,12 @@
-build/*
-dist/*
+build/
+dist/
 *.spec
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.devcleaner_cache.json

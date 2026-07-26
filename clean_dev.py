@@ -229,7 +229,36 @@ def remove_readonly_handler(func, path, exc_info):
         raise e
 
 def main():
-    target_dir = sys.argv[1] if len(sys.argv) > 1 else "."
+    group_by_folder = False
+    target_dir = "."
+
+    # Parse arguments manually
+    args = sys.argv[1:]
+    
+    # Check for help
+    if any(arg in ("-h", "--help") for arg in args):
+        print("DevCleaner - Scan and clean development environments")
+        print("\nUsage:")
+        print("  DevCleaner [target_directory] [options]")
+        print("\nArguments:")
+        print("  target_directory   The directory to scan for cleanup targets (default: current directory)")
+        print("\nOptions:")
+        print("  -h, --help         Show this help message and exit")
+        print("  -g, --group-by-folder  Group (sort) targets by their folder path instead of size")
+        return
+
+    # Check for group_by_folder flag
+    if "--group-by-folder" in args:
+        group_by_folder = True
+        args.remove("--group-by-folder")
+    if "-g" in args:
+        group_by_folder = True
+        args.remove("-g")
+
+    # Target directory is the first remaining argument, if any
+    if args:
+        target_dir = args[0]
+
     root_path = Path(target_dir).absolute().resolve()
 
     if not root_path.exists():
@@ -271,9 +300,14 @@ def main():
         print("✨ No target directories found!")
         return
 
-    found.sort(key=lambda x: x["size"], reverse=True)
-    total_reclaimable = sum(item["size"] for item in found)
+    if group_by_folder:
+        print("Sorting targets by folder path...")
+        found.sort(key=lambda x: str(x["path"]).lower())
+    else:
+        print("Sorting targets by size (descending)...")
+        found.sort(key=lambda x: x["size"], reverse=True)
 
+    total_reclaimable = sum(item["size"] for item in found)
     print(f"\nTotal potential space recovery: {format_size(total_reclaimable)}\n")
 
     choices = [
