@@ -9,8 +9,8 @@ VENV_NAMES = {
     ".virtualenv",
 }
 
-# JS/Node/Yarn ecosystem caches and directories
-JS_TARGET_CATEGORIES = {
+# General ecosystem caches and directories
+ECOSYSTEM_TARGET_CATEGORIES = {
     "node_modules": "Node Module",
     ".yarn": "Yarn Cache",
     "bower_components": "Bower Pkgs",
@@ -20,6 +20,12 @@ JS_TARGET_CATEGORIES = {
     ".expo": "Expo Cache",
     ".parcel-cache": "Parcel Cache",
     ".angular": "Angular Cache",
+    ".gradle": "Gradle Cache",
+    ".pytest_cache": "pytest Cache",
+    ".mypy_cache": "mypy Cache",
+    ".tox": "Tox Env Cache",
+    ".bundle": "Bundler Cache",
+    ".sass-cache": "Sass Cache",
 }
 
 # Directories to strictly skip during scans

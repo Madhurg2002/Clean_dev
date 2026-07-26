@@ -3,7 +3,7 @@ import json
 import os
 import time
 from pathlib import Path
-from constants import (JS_TARGET_CATEGORIES, VENV_NAMES, CACHE_FILE,
+from constants import (ECOSYSTEM_TARGET_CATEGORIES, VENV_NAMES, CACHE_FILE,
                        COLOR_GREEN, COLOR_RED, COLOR_YELLOW, COLOR_BLUE,
                        COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
 from fs_utils import support_long_path, get_dir_size, format_size, is_python_env
@@ -91,11 +91,26 @@ def process_dir(current_path: Path, skip_dirs: set):
                     folder_path = Path(entry.path)
                     name_lower = d.lower()
                     
-                    is_js_env = name_lower in JS_TARGET_CATEGORIES
+                    is_eco_cache = name_lower in ECOSYSTEM_TARGET_CATEGORIES
                     is_venv = name_lower in VENV_NAMES and is_python_env(folder_path)
                     
-                    if is_js_env or is_venv:
-                        folder_type = JS_TARGET_CATEGORIES.get(name_lower) if is_js_env else "Python VENV"
+                    # Parent-dependent targets
+                    is_rust = (name_lower == "target" and (current_path / "Cargo.toml").exists())
+                    is_maven = (name_lower == "target" and (current_path / "pom.xml").exists())
+                    is_cmake = (name_lower == "build" and (current_path / "CMakeLists.txt").exists())
+                    
+                    if is_eco_cache or is_venv or is_rust or is_maven or is_cmake:
+                        if is_eco_cache:
+                            folder_type = ECOSYSTEM_TARGET_CATEGORIES.get(name_lower)
+                        elif is_venv:
+                            folder_type = "Python VENV"
+                        elif is_rust:
+                            folder_type = "Rust Target"
+                        elif is_maven:
+                            folder_type = "Maven Target"
+                        else:  # is_cmake
+                            folder_type = "CMake Build"
+                            
                         targets.append({
                             "path": folder_path,
                             "long_path": support_long_path(folder_path),

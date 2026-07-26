@@ -115,3 +115,9 @@ This repository includes a GitHub Actions workflow that automates the building a
    * **macOS** (creating `DevCleaner-macos-arm64`)
    * **Linux** (creating `DevCleaner-linux-amd64`)
 3. The build binaries are automatically uploaded to the matching GitHub Release page for that tag.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
