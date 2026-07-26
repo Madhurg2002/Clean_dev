@@ -3,10 +3,10 @@ import json
 import os
 import time
 from pathlib import Path
-from constants import (ECOSYSTEM_TARGET_CATEGORIES, VENV_NAMES, CACHE_FILE,
-                       COLOR_GREEN, COLOR_RED, COLOR_YELLOW, COLOR_BLUE,
-                       COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
-from fs_utils import support_long_path, get_dir_size, format_size, is_python_env
+from src.constants import (ECOSYSTEM_TARGET_CATEGORIES, VENV_NAMES, CACHE_FILE,
+                           COLOR_GREEN, COLOR_RED, COLOR_YELLOW, COLOR_BLUE,
+                           COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
+from src.fs_utils import support_long_path, get_dir_size, format_size, is_python_env
 
 def load_cache(root_path: Path):
     if not CACHE_FILE.exists():

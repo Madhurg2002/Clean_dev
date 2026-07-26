@@ -12,10 +12,10 @@ except ImportError:
     print("Please install it by running: pip install questionary")
     sys.exit(1)
 
-from constants import (SKIP_DIRS, COLOR_GREEN, COLOR_RED, COLOR_YELLOW,
-                       COLOR_BLUE, COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
-from fs_utils import format_size, remove_readonly_handler, enable_ansi_support
-from scanner import load_cache, save_cache, run_full_scan
+from src.constants import (SKIP_DIRS, COLOR_GREEN, COLOR_RED, COLOR_YELLOW,
+                           COLOR_BLUE, COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
+from src.fs_utils import format_size, remove_readonly_handler, enable_ansi_support
+from src.scanner import load_cache, save_cache, run_full_scan
 
 def main():
     if hasattr(sys.stdout, "reconfigure"):
