@@ -45,9 +45,24 @@ python clean_dev.py
 # Scan a specific directory and group targets by folder path
 python clean_dev.py C:\Users\YourUser\Projects -g
 
+# Simulate a deletion without modifying files (Dry-Run)
+python clean_dev.py -d
+
+# Exclude custom directories from scanning (case-insensitive folder names)
+python clean_dev.py -e build -e test_cache
+
 # View CLI help instructions
 python clean_dev.py --help
 ```
+
+### CLI Options Table:
+| Option | Description |
+|---|---|
+| `target_dir` | The directory to scan for cleanup targets (default: current directory). |
+| `-g, --group-by-folder` | Group (sort) targets by their folder path instead of size (descending). |
+| `-d, --dry-run` | Simulate deletion without removing any files on disk. |
+| `-e, --exclude <dir>` | Custom folder names to strictly ignore during target discovery (can be used multiple times). |
+| `-h, --help` | Show usage options and exits. |
 
 ---
 

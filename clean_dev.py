@@ -1,9 +1,8 @@
-import concurrent.futures
-import json
+import argparse
 import os
 import shutil
-import stat
 import sys
+import time
 from pathlib import Path
 
 try:
@@ -13,251 +12,125 @@ except ImportError:
     print("Please install it by running: pip install questionary")
     sys.exit(1)
 
-# Target names for Python Envs (strictly excluding .env)
-VENV_NAMES = {
-    "venv",
-    ".venv",
-    "env",
-    "virtualenv",
-    ".virtualenv",
-}
-
-# JS/Node/Yarn ecosystem caches and directories
-JS_TARGET_CATEGORIES = {
-    "node_modules": "Node Module",
-    ".yarn": "Yarn Cache",
-    "bower_components": "Bower Pkgs",
-    ".turbo": "Turbo Cache",
-    ".next": "Next.js Cache",
-    ".nuxt": "Nuxt.js Cache",
-    ".expo": "Expo Cache",
-    ".parcel-cache": "Parcel Cache",
-    ".angular": "Angular Cache",
-}
-
-# Directories to strictly skip during scans
-SKIP_DIRS = {
-    "$recycle.bin",
-    "system volume information",
-    "windows",
-    "program files",
-    "program files (x86)",
-    "programdata",
-    "appdata",
-    "proc",
-    "sys",
-    "dev",
-    "private",
-    ".git",
-    ".svn",
-    ".hg",
-}
-
-# Location to store the persistent cache
-CACHE_FILE = Path.home() / ".devcleaner_cache.json"
-
-def load_cache(root_path: Path):
-    if not CACHE_FILE.exists():
-        return None
-    
-    try:
-        with open(CACHE_FILE, "r") as f:
-            data = json.load(f)
-            
-        root_key = str(root_path)
-        if root_key in data:
-            cached_items = data[root_key]
-            valid_items = []
-            
-            for item in cached_items:
-                if Path(item["long_path"]).exists():
-                    item["path"] = Path(item["path"])
-                    valid_items.append(item)
-                    
-            return valid_items
-    except (json.JSONDecodeError, KeyError, OSError):
-        return None
-    return None
-
-def save_cache(root_path: Path, items: list):
-    data = {}
-    if CACHE_FILE.exists():
-        try:
-            with open(CACHE_FILE, "r") as f:
-                data = json.load(f)
-        except (json.JSONDecodeError, OSError):
-            pass
-            
-    serialized_items = []
-    for item in items:
-        serialized = item.copy()
-        serialized["path"] = str(item["path"])
-        serialized_items.append(serialized)
-        
-    data[str(root_path)] = serialized_items
-    
-    try:
-        with open(CACHE_FILE, "w") as f:
-            json.dump(data, f)
-    except OSError:
-        pass
-
-def support_long_path(path: Path) -> str:
-    path_str = str(path.absolute().resolve())
-    if os.name == "nt":
-        if path_str.startswith("\\\\?\\"):
-            return path_str
-        elif path_str.startswith("\\\\"):
-            return f"\\\\?\\UNC\\{path_str[2:]}"
-        else:
-            return f"\\\\?\\{path_str}"
-    return path_str
-
-def get_dir_size(path_str: str) -> int:
-    total_size = 0
-    try:
-        with os.scandir(path_str) as it:
-            for entry in it:
-                try:
-                    if entry.is_file(follow_symlinks=False):
-                        total_size += entry.stat(follow_symlinks=False).st_size
-                    elif entry.is_dir(follow_symlinks=False):
-                        total_size += get_dir_size(entry.path)
-                except (PermissionError, FileNotFoundError, OSError):
-                    continue
-    except (PermissionError, FileNotFoundError, OSError):
-        pass
-    return total_size
-
-def format_size(size_in_bytes: int) -> str:
-    for unit in ["B", "KB", "MB", "GB", "TB"]:
-        if size_in_bytes < 1024.0:
-            return f"{size_in_bytes:.2f} {unit}"
-        size_in_bytes /= 1024.0
-    return f"{size_in_bytes:.2f} PB"
-
-def is_python_env(path: Path) -> bool:
-    try:
-        windows_py = (path / "Scripts" / "python.exe").exists()
-        unix_py = (path / "bin" / "python").exists()
-        cfg = (path / "pyvenv.cfg").exists()
-        return windows_py or unix_py or cfg
-    except (PermissionError, OSError):
-        return False
-
-def process_dir(current_path: Path):
-    targets = []
-    sub_dirs = []
-    try:
-        with os.scandir(current_path) as it:
-            for entry in it:
-                if entry.is_dir(follow_symlinks=False):
-                    d = entry.name
-                    if d.lower() in SKIP_DIRS:
-                        continue
-                    
-                    folder_path = Path(entry.path)
-                    name_lower = d.lower()
-                    
-                    is_js_env = name_lower in JS_TARGET_CATEGORIES
-                    is_venv = name_lower in VENV_NAMES and is_python_env(folder_path)
-                    
-                    if is_js_env or is_venv:
-                        folder_type = JS_TARGET_CATEGORIES.get(name_lower) if is_js_env else "Python VENV"
-                        targets.append({
-                            "path": folder_path,
-                            "long_path": support_long_path(folder_path),
-                            "type": folder_type,
-                        })
-                    else:
-                        sub_dirs.append(folder_path)
-    except (PermissionError, FileNotFoundError, OSError):
-        pass
-    return targets, sub_dirs
-
-def parallel_find_locations(root_dir: Path):
-    raw_targets = []
-    print(f"\n🔍 [PHASE 1] Parallel searching for targets under: {root_dir} ...\n")
-    
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {executor.submit(process_dir, root_dir)}
-        
-        while futures:
-            done, _ = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
-            for fut in done:
-                futures.remove(fut)
-                try:
-                    targets, sub_dirs = fut.result()
-                    for t in targets:
-                        raw_targets.append(t)
-                        # Padding expanded to 14 to fit "Next.js Cache"
-                        print(f"  [FOUND] {t['type']:<14} | {t['path']}")
-                    for sub in sub_dirs:
-                        futures.add(executor.submit(process_dir, sub))
-                except Exception:
-                    pass
-    return raw_targets
-
-def calculate_item_size(item: dict) -> dict:
-    item["size"] = get_dir_size(item["long_path"])
-    return item
-
-def parallel_calculate_sizes(raw_targets: list):
-    print(f"\n📊 [PHASE 2] Found {len(raw_targets)} targets. Calculating sizes in background threads...\n")
-    found_targets = []
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future_to_item = {executor.submit(calculate_item_size, item): item for item in raw_targets}
-        for future in concurrent.futures.as_completed(future_to_item):
-            item = future.result()
-            found_targets.append(item)
-            print(f"  [CALCULATED] {format_size(item['size']):<10} | {item['path']}")
-    return found_targets
-
-def run_full_scan(root_path: Path):
-    raw_targets = parallel_find_locations(root_path)
-    if not raw_targets:
-        return []
-    found = parallel_calculate_sizes(raw_targets)
-    save_cache(root_path, found)
-    return found
-
-def remove_readonly_handler(func, path, exc_info):
-    try:
-        os.chmod(path, stat.S_IWRITE)
-        func(path)
-    except Exception as e:
-        raise e
+from constants import (SKIP_DIRS, COLOR_GREEN, COLOR_RED, COLOR_YELLOW,
+                       COLOR_BLUE, COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
+from fs_utils import format_size, remove_readonly_handler, enable_ansi_support
+from scanner import load_cache, save_cache, run_full_scan
 
 def main():
-    group_by_folder = False
-    target_dir = "."
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
 
-    # Parse arguments manually
-    args = sys.argv[1:]
-    
-    # Check for help
-    if any(arg in ("-h", "--help") for arg in args):
-        print("DevCleaner - Scan and clean development environments")
-        print("\nUsage:")
-        print("  DevCleaner [target_directory] [options]")
-        print("\nArguments:")
-        print("  target_directory   The directory to scan for cleanup targets (default: current directory)")
-        print("\nOptions:")
-        print("  -h, --help         Show this help message and exit")
-        print("  -g, --group-by-folder  Group (sort) targets by their folder path instead of size")
-        return
+    enable_ansi_support()
 
-    # Check for group_by_folder flag
-    if "--group-by-folder" in args:
-        group_by_folder = True
-        args.remove("--group-by-folder")
-    if "-g" in args:
-        group_by_folder = True
-        args.remove("-g")
+    # If no arguments are passed, launch the Interactive Wizard
+    if len(sys.argv) == 1:
+        print(f"{COLOR_BOLD}💡 Welcome to DevCleaner!{COLOR_RESET}")
+        
+        wizard = questionary.select(
+            "What would you like to do?",
+            choices=[
+                "Run standard scan (Scan '.', sort by size)",
+                "Configure custom scan settings (Interactive Wizard)",
+                "Clear entire cache"
+            ]
+        ).ask()
 
-    # Target directory is the first remaining argument, if any
-    if args:
-        target_dir = args[0]
+        if not wizard:
+            return
+
+        if wizard == "Clear entire cache":
+            from constants import CACHE_FILE
+            if CACHE_FILE.exists():
+                try:
+                    os.remove(CACHE_FILE)
+                    print("🧹 Cache cleared successfully.")
+                except OSError as e:
+                    print(f"❌ Error clearing cache: {e}")
+            else:
+                print("🧹 Cache is already empty/cleared.")
+            return
+
+        if wizard.startswith("Run standard scan"):
+            target_dir = "."
+            group_by_folder = False
+            dry_run = False
+            custom_excludes = []
+        else:
+            # Interactive Configuration Wizard
+            target_dir = questionary.path(
+                "Enter the directory to scan:",
+                default="."
+            ).ask()
+            if not target_dir:
+                return
+
+            sort_choice = questionary.select(
+                "How should targets be ordered?",
+                choices=[
+                    "By size (descending)",
+                    "Group by folder path"
+                ]
+            ).ask()
+            if not sort_choice:
+                return
+            group_by_folder = (sort_choice == "Group by folder path")
+
+            dry_run = questionary.confirm(
+                "Enable Dry-Run mode? (Simulates deletion without deleting files)",
+                default=False
+            ).ask()
+            if dry_run is None:
+                return
+
+            exclude_input = questionary.text(
+                "Enter additional folder names to exclude (comma-separated, or leave blank):",
+                default=""
+            ).ask()
+            if exclude_input is None:
+                return
+            custom_excludes = [x.strip() for x in exclude_input.split(",") if x.strip()]
+    else:
+        # CLI Mode
+        parser = argparse.ArgumentParser(
+            description="DevCleaner - Scan and clean development environments",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""
+Examples:
+  python clean_dev.py                     # Interactive Wizard (when run without arguments)
+  python clean_dev.py C:\\Projects         # Scan custom directory directly
+  python clean_dev.py -g                  # Group/sort targets by path directly
+  python clean_dev.py -d                  # Dry-run mode directly
+  python clean_dev.py -e build -e dist    # Exclude custom directories directly
+"""
+        )
+        parser.add_argument("target_dir", nargs="?", default=".", help="The directory to scan for cleanup targets")
+        parser.add_argument("-g", "--group-by-folder", action="store_true", help="Group (sort) targets by their folder path instead of size")
+        parser.add_argument("-d", "--dry-run", action="store_true", help="Simulate deletion without removing files")
+        parser.add_argument("-e", "--exclude", action="append", default=[], help="Additional directory names to exclude during scanning (case-insensitive)")
+        parser.add_argument("--clear-cache", action="store_true", help="Clear the DevCleaner cache file entirely and exit")
+
+        args = parser.parse_args()
+
+        if args.clear_cache:
+            from constants import CACHE_FILE
+            if CACHE_FILE.exists():
+                try:
+                    os.remove(CACHE_FILE)
+                    print("🧹 Cache cleared successfully.")
+                except OSError as e:
+                    print(f"❌ Error clearing cache: {e}")
+            else:
+                print("🧹 Cache is already empty/cleared.")
+            return
+
+        target_dir = args.target_dir
+        group_by_folder = args.group_by_folder
+        dry_run = args.dry_run
+        custom_excludes = args.exclude
 
     root_path = Path(target_dir).absolute().resolve()
 
@@ -265,18 +138,37 @@ def main():
         print(f"Error: Path '{root_path}' does not exist.")
         return
 
+    # Combine default skip dirs with custom user exclusions
+    skip_dirs = {d.lower() for d in SKIP_DIRS}
+    for excl in custom_excludes:
+        skip_dirs.add(excl.lower())
+
     found = []
-    
+
     try:
-        cached_data = load_cache(root_path)
+        cached_data, timestamp = load_cache(root_path)
         
         if cached_data:
-            print(f"\n⚡ Found a previous scan for: {root_path}")
+            if timestamp:
+                age_seconds = int(time.time() - timestamp)
+                if age_seconds < 60:
+                    age_str = "just now"
+                elif age_seconds < 3600:
+                    age_str = f"{age_seconds // 60}m ago"
+                elif age_seconds < 86400:
+                    age_str = f"{age_seconds // 3600}h ago"
+                else:
+                    age_str = f"{age_seconds // 86400}d ago"
+                print(f"\n⚡ Found a previous scan for: {root_path} (Scanned {age_str})")
+            else:
+                print(f"\n⚡ Found a previous scan for: {root_path}")
+
             action = questionary.select(
                 "What would you like to do?",
                 choices=[
                     "Load previous list (Instant)",
-                    "Refresh list (Rescan and calculate)"
+                    "Refresh list (Rescan and calculate)",
+                    "Clear cache for this directory"
                 ]
             ).ask()
             
@@ -287,10 +179,14 @@ def main():
             if action.startswith("Load"):
                 found = cached_data
                 print(f"Loaded {len(found)} targets from cache.\n")
+            elif action.startswith("Clear"):
+                save_cache(root_path, [])
+                print(f"🧹 Cache cleared for {root_path}.")
+                return
             else:
-                found = run_full_scan(root_path)
+                found = run_full_scan(root_path, skip_dirs)
         else:
-            found = run_full_scan(root_path)
+            found = run_full_scan(root_path, skip_dirs)
             
     except KeyboardInterrupt:
         print("\n\n[!] Operation cancelled by user during scan.")
@@ -300,6 +196,7 @@ def main():
         print("✨ No target directories found!")
         return
 
+    # Apply sorting option
     if group_by_folder:
         print("Sorting targets by folder path...")
         found.sort(key=lambda x: str(x["path"]).lower())
@@ -333,7 +230,14 @@ def main():
 
     selected_size = sum(item["size"] for item in to_delete)
     
-    print(f"\n⚠️  PERMANENTLY deleting {len(to_delete)} folder(s) ({format_size(selected_size)}).")
+    if dry_run:
+        print(f"\n{COLOR_BOLD}{COLOR_GREEN}✨ [DRY-RUN] Simulating deletion of {len(to_delete)} folder(s) ({format_size(selected_size)}).{COLOR_RESET}")
+        for item in to_delete:
+            print(f"  [{COLOR_YELLOW}WOULD DELETE{COLOR_RESET}] {item['path']}")
+        print(f"\nDry run complete. No files were modified.")
+        return
+
+    print(f"\n{COLOR_BOLD}{COLOR_YELLOW}⚠️  PERMANENTLY deleting {len(to_delete)} folder(s) ({format_size(selected_size)}).{COLOR_RESET}")
     print("💡 Tip: Make sure no local servers (npm start / python) are running in these folders.")
     
     confirm = input("Are you sure? (y/N): ").strip().lower()
@@ -355,18 +259,18 @@ def main():
             else:
                 shutil.rmtree(p_target, onerror=remove_readonly_handler)
 
-            print(f"  [DELETED] {p_display}")
+            print(f"  [{COLOR_GREEN}DELETED{COLOR_RESET}] {p_display}")
             deleted_count += 1
             successfully_deleted_long_paths.add(p_target)
         except Exception as e:
-            print(f"  [ERROR] Failed to fully delete {p_display}.")
+            print(f"  [{COLOR_RED}ERROR{COLOR_RESET}] Failed to fully delete {p_display}.")
             print(f"          Reason: {e}")
 
     if successfully_deleted_long_paths:
         updated_cache = [item for item in found if item["long_path"] not in successfully_deleted_long_paths]
         save_cache(root_path, updated_cache)
 
-    print(f"\nDone! Reclaimed {format_size(selected_size)} across {deleted_count} directory(ies).")
+    print(f"\n{COLOR_BOLD}{COLOR_GREEN}Done! Reclaimed {format_size(selected_size)} across {deleted_count} directory(ies).{COLOR_RESET}")
 
 if __name__ == "__main__":
     main()
