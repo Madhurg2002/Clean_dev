@@ -51,3 +51,16 @@ def remove_readonly_handler(func, path, exc_info):
         func(path)
     except Exception as e:
         raise e
+
+def enable_ansi_support():
+    if os.name == "nt":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            h_stdout = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+            mode = ctypes.c_ulong()
+            if kernel32.GetConsoleMode(h_stdout, ctypes.byref(mode)):
+                # Enable ENABLE_VIRTUAL_TERMINAL_PROCESSING (0x0004)
+                kernel32.SetConsoleMode(h_stdout, mode.value | 0x0004)
+        except Exception:
+            pass

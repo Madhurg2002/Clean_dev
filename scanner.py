@@ -3,7 +3,9 @@ import json
 import os
 import time
 from pathlib import Path
-from constants import JS_TARGET_CATEGORIES, VENV_NAMES, CACHE_FILE
+from constants import (JS_TARGET_CATEGORIES, VENV_NAMES, CACHE_FILE,
+                       COLOR_GREEN, COLOR_RED, COLOR_YELLOW, COLOR_BLUE,
+                       COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
 from fs_utils import support_long_path, get_dir_size, format_size, is_python_env
 
 def load_cache(root_path: Path):
@@ -107,7 +109,7 @@ def process_dir(current_path: Path, skip_dirs: set):
 
 def parallel_find_locations(root_dir: Path, skip_dirs: set):
     raw_targets = []
-    print(f"\n🔍 [PHASE 1] Parallel searching for targets under: {root_dir} ...\n")
+    print(f"\n{COLOR_BOLD}{COLOR_CYAN}🔍 [PHASE 1] Parallel searching for targets under: {root_dir} ...{COLOR_RESET}\n")
     
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {executor.submit(process_dir, root_dir, skip_dirs)}
@@ -120,7 +122,7 @@ def parallel_find_locations(root_dir: Path, skip_dirs: set):
                     targets, sub_dirs = fut.result()
                     for t in targets:
                         raw_targets.append(t)
-                        print(f"  [FOUND] {t['type']:<14} | {t['path']}")
+                        print(f"  [{COLOR_GREEN}FOUND{COLOR_RESET}] {t['type']:<14} | {t['path']}")
                     for sub in sub_dirs:
                         futures.add(executor.submit(process_dir, sub, skip_dirs))
                 except Exception:
@@ -132,14 +134,14 @@ def calculate_item_size(item: dict) -> dict:
     return item
 
 def parallel_calculate_sizes(raw_targets: list):
-    print(f"\n📊 [PHASE 2] Found {len(raw_targets)} targets. Calculating sizes in background threads...\n")
+    print(f"\n{COLOR_BOLD}{COLOR_CYAN}📊 [PHASE 2] Found {len(raw_targets)} targets. Calculating sizes in background threads...{COLOR_RESET}\n")
     found_targets = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future_to_item = {executor.submit(calculate_item_size, item): item for item in raw_targets}
         for future in concurrent.futures.as_completed(future_to_item):
             item = future.result()
             found_targets.append(item)
-            print(f"  [CALCULATED] {format_size(item['size']):<10} | {item['path']}")
+            print(f"  [{COLOR_BLUE}CALCULATED{COLOR_RESET}] {format_size(item['size']):<10} | {item['path']}")
     return found_targets
 
 def run_full_scan(root_path: Path, skip_dirs: set):

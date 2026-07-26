@@ -1,6 +1,6 @@
 # DevCleaner
 
-DevCleaner is a high-performance, parallelized command-line utility written in Python to scan directories, discover space-consuming developer caches/dependencies, and clean them up interactively. 
+DevCleaner is a high-performance, colorized command-line utility written in Python to scan directories, discover space-consuming developer caches/dependencies, and clean them up interactively. 
 
 It targets:
 * **Node.js / JavaScript**: `node_modules`, `.yarn`, `bower_components`, `.turbo`, `.next`, `.nuxt`, `.expo`, `.parcel-cache`, `.angular`
@@ -12,10 +12,21 @@ It targets:
 
 * **Parallel Scanning**: Uses background thread pools to find directories rapidly.
 * **Background Calculations**: Computes directory sizes concurrently to avoid UI lockups.
-* **Interactive TUI**: Selection checkboxes and select menus powered by `questionary`.
-* **Caching System**: Saves scan results in a cache (`~/.devcleaner_cache.json`) for instant reload/actions.
+* **Colorized Console**: Rich ANSI color support (Green for FOUND, Blue for SIZES, Bold Cyan for headers, Red for errors) with automated Windows VT processing.
+* **Interactive Configuration Wizard**: Running without arguments launches a setup wizard containing step-by-step options and path autocompletion.
+* **Cache Management**: Saves scan results in a cache (`~/.devcleaner_cache.json`) for instant reloads. Cleans itself up automatically when cache entries become empty.
 * **Windows Long Path Support**: Automatically formats long paths to bypass Windows path length limits.
-* **Safety First**: Asks for confirmation before deletion, allows selective deletion, and prompts to make sure no active processes are lock-holding files.
+* **Safety First**: Simulated deletions (Dry-Run mode) and safety prompts ensure files are only deleted when confirmed.
+
+---
+
+## Code Architecture
+
+The codebase is partitioned into modular, single-responsibility files for easier readability:
+*   [constants.py](file:///c:/Code/Study/Clean_dev/constants.py): Holds scan categories, SKIP list, cache files, and ANSI colors.
+*   [fs_utils.py](file:///c:/Code/Study/Clean_dev/fs_utils.py): Holds size math, path conversion utilities, and Windows terminal color initialization.
+*   [scanner.py](file:///c:/Code/Study/Clean_dev/scanner.py): Contains parallel scanning executors and JSON caching algorithms.
+*   [clean_dev.py](file:///c:/Code/Study/Clean_dev/clean_dev.py): Orchestrates arguments, launches the custom scan wizard, and executes deletion flows.
 
 ---
 
@@ -36,12 +47,16 @@ It targets:
 
 ## Usage
 
-Run the Python script by pointing it to any target directory you want to clean (defaults to the current directory if omitted):
+### 1. Interactive Wizard Mode
+To scan interactively (pick scan folder with autocomplete, choose sorting, toggles exclusions and dry-run), simply run without arguments:
+```bash
+python clean_dev.py
+```
+
+### 2. Direct CLI Automation Mode
+Run the Python script by pointing it to any target directory and passing optional parameter flags:
 
 ```bash
-# Scan the current directory (ordered by size descending)
-python clean_dev.py
-
 # Scan a specific directory and group targets by folder path
 python clean_dev.py C:\Users\YourUser\Projects -g
 
@@ -50,6 +65,9 @@ python clean_dev.py -d
 
 # Exclude custom directories from scanning (case-insensitive folder names)
 python clean_dev.py -e build -e test_cache
+
+# Clear the DevCleaner cache entirely and exit
+python clean_dev.py --clear-cache
 
 # View CLI help instructions
 python clean_dev.py --help
@@ -62,6 +80,7 @@ python clean_dev.py --help
 | `-g, --group-by-folder` | Group (sort) targets by their folder path instead of size (descending). |
 | `-d, --dry-run` | Simulate deletion without removing any files on disk. |
 | `-e, --exclude <dir>` | Custom folder names to strictly ignore during target discovery (can be used multiple times). |
+| `--clear-cache` | Clear the persistent scan cache file entirely and exit. |
 | `-h, --help` | Show usage options and exits. |
 
 ---
