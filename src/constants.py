@@ -26,6 +26,7 @@ ECOSYSTEM_TARGET_CATEGORIES = {
     ".tox": "Tox Env Cache",
     ".bundle": "Bundler Cache",
     ".sass-cache": "Sass Cache",
+    "__pycache__": "Python Bytecode",
 }
 
 # Directories to strictly skip during scans
