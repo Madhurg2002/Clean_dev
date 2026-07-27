@@ -209,7 +209,7 @@ Examples:
     print(f"\nTotal potential space recovery: {format_size(total_reclaimable)}\n")
 
     try:
-        to_delete = filter_checkbox_tui(found, group_by_folder)
+        to_delete = filter_checkbox_tui(found, group_by_folder, Path(target_dir))
     except KeyboardInterrupt:
         print("\nCancelled. Nothing was deleted.")
         return
