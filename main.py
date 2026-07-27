@@ -61,13 +61,14 @@ def main():
             dry_run = False
             custom_excludes = []
         else:
-            # Interactive Configuration Wizard
             target_dir = questionary.path(
                 "Enter the directory to scan:",
-                default="."
+                default=""
             ).ask()
-            if not target_dir:
+            if target_dir is None:
                 return
+            if not target_dir.strip():
+                target_dir = "."
 
             sort_choice = questionary.select(
                 "How should targets be ordered?",
@@ -87,13 +88,47 @@ def main():
             if dry_run is None:
                 return
 
+            # Scan immediate subdirectories to offer as filterable choices
+            subfolders = []
+            try:
+                for entry in os.scandir(target_dir):
+                    if entry.is_dir(follow_symlinks=False):
+                        name_lower = entry.name.lower()
+                        if name_lower not in {".git", ".svn", ".hg", "node_modules", "venv", ".venv", "__pycache__"}:
+                            subfolders.append({
+                                "path": Path(entry.path),
+                                "long_path": entry.path,
+                                "type": "Folder",
+                                "size": 0
+                            })
+            except Exception:
+                pass
+
+            custom_excludes = []
+            if subfolders:
+                exclude_choice = questionary.confirm(
+                    "Do you want to select specific directories to exclude from the scan?",
+                    default=False
+                ).ask()
+                if exclude_choice is None:
+                    return
+                if exclude_choice:
+                    print("\nSelect folders to exclude (Use Up/Down to navigate, Space to check, Enter to confirm):\n")
+                    selected_to_exclude = filter_checkbox_tui(subfolders, group_by_folder=False, root_path=Path(target_dir))
+                    if selected_to_exclude is None:
+                        return
+                    custom_excludes.extend([item["path"].name for item in selected_to_exclude])
+
             exclude_input = questionary.text(
-                "Enter additional folder names to exclude (comma-separated, or leave blank):",
+                "Enter additional custom folder names to exclude (comma-separated, or leave blank):",
                 default=""
             ).ask()
             if exclude_input is None:
                 return
-            custom_excludes = [x.strip() for x in exclude_input.split(",") if x.strip()]
+            for x in exclude_input.split(","):
+                val = x.strip()
+                if val:
+                    custom_excludes.append(val)
     else:
         # CLI Mode
         parser = argparse.ArgumentParser(
