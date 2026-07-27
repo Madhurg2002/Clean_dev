@@ -18,6 +18,7 @@ It targets:
 * **Background Calculations**: Computes directory sizes concurrently to avoid UI lockups.
 * **Colorized Console**: Rich ANSI color support (Green for FOUND, Blue for SIZES, Bold Cyan for headers, Red for errors) with automated Windows VT processing.
 * **Interactive Configuration Wizard**: Running without arguments launches a setup wizard containing step-by-step options and path autocompletion.
+* **Filterable & Grouped Selection TUI**: Displays target lists grouped beautifully by type (or parent folder path). You can type at any time to filter the entries in real-time. Toggling an entry with Space automatically moves the cursor/pointer to the next item for rapid selection.
 * **Cache Management**: Saves scan results in a cache (`~/.devcleaner_cache.json`) for instant reloads. Cleans itself up automatically when cache entries become empty.
 * **Windows Long Path Support**: Automatically formats long paths to bypass Windows path length limits.
 * **Safety First**: Simulated deletions (Dry-Run mode) and safety prompts ensure files are only deleted when confirmed.

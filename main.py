@@ -16,6 +16,7 @@ from src.constants import (SKIP_DIRS, COLOR_GREEN, COLOR_RED, COLOR_YELLOW,
                            COLOR_BLUE, COLOR_CYAN, COLOR_RESET, COLOR_BOLD)
 from src.fs_utils import format_size, remove_readonly_handler, enable_ansi_support
 from src.scanner import load_cache, save_cache, run_full_scan
+from src.tui import filter_checkbox_tui
 
 def main():
     if hasattr(sys.stdout, "reconfigure"):
@@ -207,19 +208,8 @@ Examples:
     total_reclaimable = sum(item["size"] for item in found)
     print(f"\nTotal potential space recovery: {format_size(total_reclaimable)}\n")
 
-    choices = [
-        questionary.Choice(
-            title=f"{item['type']:<14} | {format_size(item['size']):<10} | {item['path']}",
-            value=item
-        )
-        for item in found
-    ]
-
     try:
-        to_delete = questionary.checkbox(
-            "Select folders to delete (Space to check/uncheck, Enter to confirm, Ctrl+C to cancel):",
-            choices=choices
-        ).ask()
+        to_delete = filter_checkbox_tui(found, group_by_folder)
     except KeyboardInterrupt:
         print("\nCancelled. Nothing was deleted.")
         return
