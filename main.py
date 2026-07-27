@@ -58,7 +58,6 @@ def main():
         if wizard.startswith("Run standard scan"):
             target_dir = "."
             group_by_folder = False
-            dry_run = False
             custom_excludes = []
         else:
             target_dir = questionary.path(
@@ -80,13 +79,6 @@ def main():
             if not sort_choice:
                 return
             group_by_folder = (sort_choice == "Group by folder path")
-
-            dry_run = questionary.confirm(
-                "Enable Dry-Run mode? (Simulates deletion without deleting files)",
-                default=False
-            ).ask()
-            if dry_run is None:
-                return
 
             # Scan immediate subdirectories to offer as filterable choices
             subfolders = []
@@ -145,7 +137,6 @@ Examples:
         )
         parser.add_argument("target_dir", nargs="?", default=".", help="The directory to scan for cleanup targets")
         parser.add_argument("-g", "--group-by-folder", action="store_true", help="Group (sort) targets by their folder path instead of size")
-        parser.add_argument("-d", "--dry-run", action="store_true", help="Simulate deletion without removing files")
         parser.add_argument("-e", "--exclude", action="append", default=[], help="Additional directory names to exclude during scanning (case-insensitive)")
         parser.add_argument("--clear-cache", action="store_true", help="Clear the DevCleaner cache file entirely and exit")
 
@@ -165,7 +156,6 @@ Examples:
 
         target_dir = args.target_dir
         group_by_folder = args.group_by_folder
-        dry_run = args.dry_run
         custom_excludes = args.exclude
 
     root_path = Path(target_dir).absolute().resolve()
@@ -254,13 +244,6 @@ Examples:
         return
 
     selected_size = sum(item["size"] for item in to_delete)
-    
-    if dry_run:
-        print(f"\n{COLOR_BOLD}{COLOR_GREEN}✨ [DRY-RUN] Simulating deletion of {len(to_delete)} folder(s) ({format_size(selected_size)}).{COLOR_RESET}")
-        for item in to_delete:
-            print(f"  [{COLOR_YELLOW}WOULD DELETE{COLOR_RESET}] {item['path']}")
-        print(f"\nDry run complete. No files were modified.")
-        return
 
     print(f"\n{COLOR_BOLD}{COLOR_YELLOW}⚠️  PERMANENTLY deleting {len(to_delete)} folder(s) ({format_size(selected_size)}).{COLOR_RESET}")
     print("💡 Tip: Make sure no local servers (npm start / python) are running in these folders.")
