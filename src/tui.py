@@ -136,7 +136,7 @@ class FilterableCheckboxApp:
             def flatten(node, prefix="", is_last=True, is_root=True):
                 lines = []
                 node_path_str = str(node["full_path"])
-                is_expanded = self.folder_expanded.get(node_path_str, True)
+                is_expanded = self.folder_expanded.get(node_path_str, False)
                 
                 if is_root:
                     lines.append({
@@ -238,7 +238,7 @@ class FilterableCheckboxApp:
             if line["type"] in ("root", "folder"):
                 node = line["node"]
                 node_path_str = str(node["full_path"])
-                is_expanded = self.folder_expanded.get(node_path_str, True)
+                is_expanded = self.folder_expanded.get(node_path_str, False)
                 
                 # Checkbox state
                 cb_state = get_folder_cb_state(node, self.selected_paths)
@@ -256,13 +256,19 @@ class FilterableCheckboxApp:
                 exp_char = "▼ " if is_expanded else "▶ "
                 name_str = node["name"] if line["type"] == "folder" else str(node["full_path"])
                 
+                node_targets = get_target_descendants(node)
+                total_size = sum(item["size"] for item in node_targets)
+                size_str = f" ({format_size(total_size)})" if total_size > 0 else ""
+                
                 prefix = line.get("prefix", "")
                 fragments.extend([
                     pointer_frag,
                     ("", prefix),
                     (f"{style_prefix} {cb_style}", f"{cb_char} "),
                     (f"{style_prefix} class:pointer", exp_char),
-                    (f"{style_prefix} class:group_header", f"📁 {name_str}\n")
+                    (f"{style_prefix} class:group_header", f"📁 {name_str}"),
+                    (f"{style_prefix} class:item_size", size_str),
+                    (f"{style_prefix}", "\n")
                 ])
                 current_y += 1
             elif line["type"] == "target":
