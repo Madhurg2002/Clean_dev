@@ -143,8 +143,7 @@ class FilterableCheckboxApp:
         )
         header_window = Window(
             FormattedTextControl(lambda: [("class:help", header_text)]),
-            height=2,
-            char_style="class:help"
+            height=2
         )
 
         # Search Bar
