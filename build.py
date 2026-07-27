@@ -59,8 +59,14 @@ def clean_and_build():
             print(f"\n[SUCCESS] New version built and copied in place: {root_exe}")
             size_mb = root_exe.stat().st_size / (1024 * 1024)
             print(f"Binary Size: {size_mb:.2f} MB")
+            
+            # Post-build cleanup of temporary folders
+            if build_dir.exists():
+                shutil.rmtree(build_dir)
+            if dist_dir.exists():
+                shutil.rmtree(dist_dir)
         except Exception as e:
-            print(f"Error: Failed to copy compiled binary to root: {e}")
+            print(f"Error: Failed during copy or cleanup: {e}")
             sys.exit(1)
     else:
         print(f"Error: Compiled executable not found at {compiled_exe}")
